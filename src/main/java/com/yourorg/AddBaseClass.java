@@ -7,10 +7,9 @@ import org.openrewrite.Option;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.JavaIsoVisitor;
-import org.openrewrite.java.tree.J;
-import org.openrewrite.java.tree.JLeftPadded;
-import org.openrewrite.java.tree.Space;
-import org.openrewrite.java.tree.TypeTree;
+import org.openrewrite.java.JavaParser;
+import org.openrewrite.java.JavaTemplate;
+import org.openrewrite.java.tree.*;
 
 @Value
 @EqualsAndHashCode(callSuper = false)
@@ -31,6 +30,12 @@ public class AddBaseClass extends Recipe {
             example = "com.yourorg.MyBaseClass")
     String fullyQualifiedClassName;
 
+    @Option(displayName = "Fully qualified interface name",
+            description = "A full-qualified interface name to be implemented with.",
+            example = "com.yourorg.MyInterface")
+    String fullyQualifiedInterfaceName;
+
+
     @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
 
@@ -41,8 +46,24 @@ public class AddBaseClass extends Recipe {
                                                             ExecutionContext ctx) {
                 J.ClassDeclaration cd = super.visitClassDeclaration(classDecl, ctx);
                 if (cd.getExtends() == null) {
-                    cd = cd.withName(cd.getName().withSimpleName(cd.getName().getSimpleName() + " "));
-                    cd = cd.getPadding().withExtends(JLeftPadded.build(TypeTree.build(fullyQualifiedClassName).withPrefix(Space.SINGLE_SPACE)));
+                    JavaTemplate
+                            .builder(JavaType.ShallowClass.build(fullyQualifiedClassName).getClassName())
+                            .imports(fullyQualifiedClassName)
+                            .build()
+                            .apply(
+                                    getCursor(),
+                                    cd.getCoordinates().addImplementsClause()
+                            );
+                }
+                if (cd.getImplements() == null) {
+                    JavaTemplate
+                            .builder(JavaType.ShallowClass.build(fullyQualifiedInterfaceName).getClassName())
+                            .imports(fullyQualifiedInterfaceName)
+                            .build()
+                            .apply(
+                                    getCursor(),
+                                    cd.getCoordinates().addImplementsClause()
+                            );
                 }
                 return cd;
             }

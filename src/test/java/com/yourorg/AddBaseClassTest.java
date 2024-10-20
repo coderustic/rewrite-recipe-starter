@@ -10,7 +10,7 @@ class AddBaseClassTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec.recipe(
-          new AddBaseClass("a.b.C"));
+          new AddBaseClass("a.b.C", "a.b.D"));
     }
 
     @Test
@@ -27,7 +27,7 @@ class AddBaseClassTest implements RewriteTest {
             """
             package com.yourorg;
             
-            public class MyBean extends a.b.C {
+            public class MyBean extends a.b.C implements a.b.D {
             }
             """
           )
